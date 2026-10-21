@@ -2388,6 +2388,55 @@
       cursor: pointer;
     }
 
+
+    /* ================= BUTTON STYLES CHUẨN APP (ĐẸP & ĐỒNG BỘ) ================= */
+    .btn-primary {
+      background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+      color: #ffffff !important;
+      border: none !important;
+      width: 100%;
+      padding: 15px 20px;
+      border-radius: 16px;
+      font-size: 14.5px;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      box-shadow: 0 4px 15px rgba(37, 99, 235, 0.28);
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+      outline: none;
+      user-select: none;
+    }
+
+    .btn-primary:active {
+      transform: scale(0.98);
+      box-shadow: 0 2px 8px rgba(37, 99, 235, 0.2);
+    }
+
+    .btn-secondary {
+      background: #f1f5f9;
+      color: #334155;
+      border: 1px solid #cbd5e1;
+      width: 100%;
+      padding: 14px;
+      border-radius: 14px;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      transition: all 0.2s;
+    }
+
+    .btn-secondary:hover {
+      background: #e2e8f0;
+      color: #0f172a;
+    }
+
 </style>
 </head>
 <body>
@@ -2683,30 +2732,6 @@
               </div>
             </div>
             <div class="wallet-toggle-pill unlinked" id="pill-momo">+ Liên kết</div>
-          </div>
-
-          <!-- Ví 3: Kredivo -->
-          <div class="account-card" onclick="toggleWalletConnection('kredivo')">
-            <div class="account-info">
-              <div class="acc-icon kredivo">K</div>
-              <div class="acc-text">
-                <h4>Kredivo</h4>
-                <p>Mua trước trả sau lên đến 50 triệu</p>
-              </div>
-            </div>
-            <div class="wallet-toggle-pill unlinked" id="pill-kredivo">+ Liên kết</div>
-          </div>
-
-          <!-- Ví 4: Home PayLater -->
-          <div class="account-card" onclick="toggleWalletConnection('home')">
-            <div class="account-info">
-              <div class="acc-icon home">H</div>
-              <div class="acc-text">
-                <h4>Home PayLater</h4>
-                <p>Trả sau Tiki, Lazada, TGDĐ</p>
-              </div>
-            </div>
-            <div class="wallet-toggle-pill unlinked" id="pill-home">+ Liên kết</div>
           </div>
         </div>
 
@@ -3189,7 +3214,7 @@
           </div>
         </div>
 
-        <button class="btn-primary" style="background: #e2e8f0; color: #334155;" onclick="goToScreen('screen-history')">
+        <button class="btn-secondary" onclick="goToScreen('screen-history')">
           ← Quay lại danh sách đơn
         </button>
       </div>
@@ -3901,21 +3926,31 @@
     function closeAddPlatformSheet() {
       document.getElementById('platformSheet').classList.remove('active');
     }
-        function addNewPlatform(name, className, letter, desc) {
+            function addNewPlatform(name, className, letter, desc) {
       closeAddPlatformSheet();
+
+      // Xác định key của ví
+      const keyMap = {
+        'Kredivo': 'kredivo',
+        'Home PayLater': 'home'
+      };
+      const walletKey = keyMap[name] || className;
 
       // Kiểm tra xem đã có trong danh sách chưa
       const list = document.getElementById('linkedPlatformsList');
-      const existing = Array.from(list.querySelectorAll('h4')).find(h => h.innerText.trim() === name);
+      const existing = Array.from(list.querySelectorAll('h4')).find(h => h.innerText.trim().toLowerCase().includes(name.toLowerCase()));
       if (existing) {
-        showInAppToast("Đã tồn tại", `Tài khoản ${name} đã được kết nối từ trước!`, "ℹ️");
+        showInAppToast("Đã tồn tại", `Tài khoản ${name} đã có trong danh sách!`, "ℹ️");
         return;
       }
 
-      // 1. Thêm trực tiếp card vào màn hình Kết nối tài khoản (chuẩn v3)
+      // Đăng ký vào walletStates
+      walletStates[walletKey] = true;
+
+      // Thêm thẻ vào danh sách liên kết
       const newCard = document.createElement('div');
-      newCard.className = 'account-card connected';
-      newCard.onclick = function() { connectPlatform(name); };
+      newCard.className = 'account-card';
+      newCard.onclick = function() { toggleWalletConnection(walletKey); };
       newCard.innerHTML = `
         <div class="account-info">
           <div class="acc-icon ${className}">${letter}</div>
@@ -3924,14 +3959,14 @@
             <p>${desc}</p>
           </div>
         </div>
-        <div style="color: #10b981; font-size: 12px; font-weight: 700;">● Đã kết nối</div>
+        <div class="wallet-toggle-pill linked" id="pill-${walletKey}">● Đã liên kết</div>
       `;
       list.appendChild(newCard);
 
-      // 2. Thêm tab lọc mới vào màn hình Lịch sử giao dịch
+      // Thêm tab lọc mới vào màn hình Lịch sử giao dịch nếu chưa có
       const tabs = document.getElementById('historyTabs');
       if (tabs) {
-        const tabExists = Array.from(tabs.children).some(t => t.innerText.trim() === name);
+        const tabExists = Array.from(tabs.children).some(t => t.innerText.trim().toLowerCase() === name.toLowerCase());
         if (!tabExists) {
           const newTab = document.createElement('div');
           newTab.className = 'filter-tab';
@@ -3941,8 +3976,8 @@
         }
       }
 
-      // 3. Thông báo nội bộ app
-      showInAppToast("Đã thêm thành công", `Tài khoản ${name} đã được thêm vào danh sách mua trước trả sau!`, "✅");
+      // Thông báo nội bộ app
+      showInAppToast("Thêm ví thành công", `Đã thêm và kích hoạt liên kết cho ${name}!`, "✅");
     }
     function connectPlatform(name) {
       showInAppToast("Trạng thái tài khoản", `${name} đang hoạt động và được Khiên bảo vệ.`, "ℹ️");
